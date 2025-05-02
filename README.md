@@ -81,7 +81,8 @@ Make sure you have installed:
 
 - Python (version 3.9 or higher recommended)
 - Node.js and npm
-- Libpostal library 
+- Libpostal library
+- WSL and Ubuntu
 
 ---
 
