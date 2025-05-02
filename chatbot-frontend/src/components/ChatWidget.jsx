@@ -1,6 +1,26 @@
 import { useState, useRef, useEffect } from 'react';
 // import './ChatWidget.css';
 
+// Add styles for animation
+const fadeInOutKeyframes = `
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translateY(-20px); }
+  10% { opacity: 1; transform: translateY(0); }
+  90% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-20px); }
+}
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+.animate-fade-in-out {
+  animation: fadeInOut 2s ease-in-out;
+}
+.animate-fade-out {
+  animation: fadeOut 0.3s ease-out forwards;
+}
+`;
+
 const ChatWidget = ({
   primaryColor = '#6366F1', // Indigo
   secondaryColor = '#FFFFFF',
@@ -26,6 +46,7 @@ const ChatWidget = ({
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [isVoiceLoading, setIsVoiceLoading] = useState(false);
   const [formStep, setFormStep] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
@@ -387,6 +408,7 @@ const ChatWidget = ({
         formData.append('audio', audioBlob, 'recording.wav');
 
         try {
+          setIsVoiceLoading(true); // Start voice loading state
           const response = await fetch('http://localhost:5000/transcribe', {
             method: 'POST',
             mode: 'cors',
@@ -402,6 +424,11 @@ const ChatWidget = ({
           const data = await response.json();
           if (data.text) {
             setInputValue(data.text);
+            // Auto submit the form after a short delay to let user see the transcription
+            setTimeout(() => {
+              const event = new Event('submit', { cancelable: true });
+              document.querySelector('.chat-input-form').dispatchEvent(event);
+            }, 800);
           }
         } catch (error) {
           console.error('Error sending audio:', error);
@@ -409,6 +436,8 @@ const ChatWidget = ({
             type: 'bot',
             text: `Sorry, there was an error transcribing your voice message: ${error.message}`
           }]);
+        } finally {
+          setIsVoiceLoading(false); // End voice loading state
         }
       };
 
@@ -538,6 +567,9 @@ const ChatWidget = ({
 
   return (
     <div className={`chat-widget-container ${positionClasses[position]}`}>
+      {/* Add animation styles */}
+      <style>{fadeInOutKeyframes}</style>
+      
       {/* Chat Icon Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
@@ -648,39 +680,137 @@ const ChatWidget = ({
                           {message.text}
                         </p>
                         {message.leads && (
-                          <div className="mt-2 space-y-3">
+                          <div className="mt-3 space-y-4 relative rounded-xl bg-gradient-to-br from-indigo-50 to-purple-50 p-4 border border-indigo-100/50 shadow-sm">
+                            {/* Copy button */}
+                            <button 
+                              onClick={() => {
+                                const content = [
+                                  message.leads.emails.length > 0 ? `Emails:\n${message.leads.emails.join('\n')}` : '',
+                                  message.leads.phones.length > 0 ? `\nPhone Numbers:\n${message.leads.phones.join('\n')}` : '',
+                                  message.leads.locations.length > 0 ? `\nLocations:\n${message.leads.locations.join('\n')}` : ''
+                                ].filter(Boolean).join('\n');
+                                navigator.clipboard.writeText(content);
+                                
+                                // Show a mini toast notification
+                                const toast = document.createElement('div');
+                                toast.className = 'fixed top-4 right-4 bg-indigo-600 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-fade-in-out';
+                                toast.textContent = 'Lead data copied to clipboard!';
+                                document.body.appendChild(toast);
+                                setTimeout(() => {
+                                  toast.classList.add('animate-fade-out');
+                                  setTimeout(() => document.body.removeChild(toast), 300);
+                                }, 2000);
+                              }}
+                              className="absolute top-2 right-2 bg-white hover:bg-indigo-50 text-indigo-600 p-1.5 rounded-full shadow-sm hover:shadow-md transition-all duration-200"
+                              title="Copy all lead data"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                              </svg>
+                            </button>
+                            
+                            <h3 className="text-sm font-semibold text-indigo-700 mb-2 flex items-center">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                              </svg>
+                              Lead Generation Results
+                            </h3>
+                            
                             {message.leads.emails.length > 0 && (
-                              <div className="flex flex-col gap-1">
-                                <span className="text-xs text-gray-500 font-medium">Emails:</span>
-                                <div className="flex flex-wrap gap-1">
+                              <div className="flex flex-col gap-2">
+                                <div className="flex items-center gap-1.5">
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                  </svg>
+                                  <span className="text-xs font-semibold text-blue-700">Emails</span>
+                                </div>
+                                <div className="flex flex-wrap gap-1.5 bg-gradient-to-r from-blue-50 to-indigo-50 p-2 rounded-lg border border-blue-100">
                                   {message.leads.emails.map((email, i) => (
-                                    <div key={i} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
-                                      {email}
+                                    <div key={i} className="px-3 py-1.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-md text-xs font-medium shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 cursor-default flex items-center gap-1">
+                                      <span>{email}</span>
+                                      <button 
+                                        onClick={() => {
+                                          navigator.clipboard.writeText(email);
+                                          // Small visual feedback
+                                          const btn = event.currentTarget;
+                                          btn.classList.add('scale-110');
+                                          setTimeout(() => btn.classList.remove('scale-110'), 200);
+                                        }}
+                                        className="ml-1 opacity-70 hover:opacity-100"
+                                        title="Copy email"
+                                      >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                        </svg>
+                                      </button>
                                     </div>
                                   ))}
                                 </div>
                               </div>
                             )}
+                            
                             {message.leads.phones.length > 0 && (
-                              <div className="flex flex-col gap-1">
-                                <span className="text-xs text-gray-500 font-medium">Phone Numbers:</span>
-                                <div className="flex flex-wrap gap-1">
+                              <div className="flex flex-col gap-2">
+                                <div className="flex items-center gap-1.5">
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                                  </svg>
+                                  <span className="text-xs font-semibold text-green-700">Phone Numbers</span>
+                                </div>
+                                <div className="flex flex-wrap gap-1.5 bg-gradient-to-r from-green-50 to-emerald-50 p-2 rounded-lg border border-green-100">
                                   {message.leads.phones.map((phone, i) => (
-                                    <div key={i} className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
-                                      {phone}
+                                    <div key={i} className="px-3 py-1.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-md text-xs font-medium shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 cursor-default flex items-center gap-1">
+                                      <span>{phone}</span>
+                                      <button 
+                                        onClick={() => {
+                                          navigator.clipboard.writeText(phone);
+                                          // Small visual feedback
+                                          const btn = event.currentTarget;
+                                          btn.classList.add('scale-110');
+                                          setTimeout(() => btn.classList.remove('scale-110'), 200);
+                                        }}
+                                        className="ml-1 opacity-70 hover:opacity-100"
+                                        title="Copy phone"
+                                      >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                        </svg>
+                                      </button>
                                     </div>
                                   ))}
                                 </div>
                               </div>
                             )}
+                            
                             {message.leads.locations.length > 0 && (
                               <div className="flex flex-col gap-2">
-                                <span className="text-xs text-gray-500 font-medium">Locations:</span>
-                                <div className="flex flex-col gap-2">
+                                <div className="flex items-center gap-1.5">
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  </svg>
+                                  <span className="text-xs font-semibold text-purple-700">Locations</span>
+                                </div>
+                                <div className="flex flex-col gap-1.5 bg-gradient-to-r from-purple-50 to-pink-50 p-2 rounded-lg border border-purple-100">
                                   {message.leads.locations.map((location, i) => (
-                                    <div key={i} className="w-full">
-                                      <div className="px-3 py-1.5 bg-purple-100 text-purple-800 rounded-lg text-xs font-medium whitespace-normal">
-                                        {location}
+                                    <div key={i} className="w-full group relative hover:z-10">
+                                      <div className="p-2 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-md text-xs font-medium shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 cursor-default flex justify-between items-center">
+                                        <span className="break-words whitespace-normal">{location}</span>
+                                        <button 
+                                          onClick={() => {
+                                            navigator.clipboard.writeText(location);
+                                            // Small visual feedback
+                                            const btn = event.currentTarget;
+                                            btn.classList.add('scale-110');
+                                            setTimeout(() => btn.classList.remove('scale-110'), 200);
+                                          }}
+                                          className="ml-1 opacity-70 hover:opacity-100 flex-shrink-0"
+                                          title="Copy location"
+                                        >
+                                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                          </svg>
+                                        </button>
                                       </div>
                                     </div>
                                   ))}
@@ -722,18 +852,34 @@ const ChatWidget = ({
           {/* Chat Input Area */}
           <div className="absolute bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-sm border-t border-white/20">
             <form onSubmit={handleSendMessage} className="chat-input-form">
-              <input
-                type="text"
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Type your message..."
-                className="chat-input"
-              />
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder={isVoiceLoading ? "Transcribing your voice..." : "Type your message..."}
+                  className={`chat-input ${isVoiceLoading ? 'pr-10 border-2 border-indigo-400 border-opacity-70 animate-pulse' : ''}`}
+                  disabled={isVoiceLoading}
+                />
+                {isVoiceLoading && (
+                  <>
+                    <div className="absolute inset-0 rounded-full overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-r from-indigo-400/10 via-purple-400/10 to-pink-400/10 animate-gradient-x rounded-full"></div>
+                    </div>
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <div className="flex items-center justify-center">
+                        <div className="w-5 h-5 border-2 border-blue-500 border-solid rounded-full animate-spin border-t-transparent border-r-indigo-400 border-b-purple-500 border-l-pink-500"></div>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
               <button
                 type="button"
                 onClick={toggleRecording}
                 className={`microphone-button ${isRecording ? 'recording' : ''}`}
+                disabled={isVoiceLoading}
               >
                 {isRecording ? (
                   <div className="recording-indicator">
@@ -743,6 +889,11 @@ const ChatWidget = ({
                       <div className="wave-bar"></div>
                     </div>
                     <span className="recording-time">{formatTime(recordingTime)}</span>
+                  </div>
+                ) : isVoiceLoading ? (
+                  <div className="h-6 w-6 flex items-center justify-center relative">
+                    <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-full opacity-30 animate-pulse"></div>
+                    <div className="w-4 h-4 rounded-full border-2 border-t-transparent border-r-indigo-400 border-b-purple-500 border-l-pink-500 animate-spin"></div>
                   </div>
                 ) : (
                   <svg
@@ -765,7 +916,7 @@ const ChatWidget = ({
               <button
                 type="submit"
                 className="send-button"
-                disabled={!inputValue.trim()}
+                disabled={!inputValue.trim() || isVoiceLoading}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"

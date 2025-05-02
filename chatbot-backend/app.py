@@ -50,7 +50,7 @@ CORS(app, resources={
 })
 
 @app.route('/admin')
-@login_required
+# @login_required
 def admin_panel():
     if not current_user.is_authenticated or current_user.role not in ['admin', 'client']:
         flash('You do not have permission to access this page')
