@@ -1,20 +1,19 @@
-# Tam-Chatbot-AI
 # Lead AI Chatbot
 
 This project is a Lead Generation Chatbot using Flask for the backend and ReactJS for the frontend.
 
 ## Backend Setup
 
-1. Navigate to the backend folder:
+1. Navigate to the backend folder (Paste this command inside the WSL terminal ):
 
    ```
-   cd chatbot-backend
+   cd ~/lead-ai-chatbot/chatbot-backend
    ```
 
 2. Create a virtual environment:
 
    ```
-   python -m venv venv
+   python3 -m venv venv
    ```
 
 3. Activate the virtual environment:
@@ -37,7 +36,7 @@ This project is a Lead Generation Chatbot using Flask for the backend and ReactJ
 5. Run the backend server:
 
    ```
-   python app.py
+   python3 app.py
    ```
 
 The backend server will start on:
@@ -50,7 +49,7 @@ http://localhost:5000
 
 ## Frontend Setup
 
-1. Navigate to the frontend folder:
+1. Navigate to the frontend folder (this could be in local terminals like cmd or powershel):
 
    ```
    cd chatbot-frontend
@@ -82,6 +81,7 @@ Make sure you have installed:
 
 - Python (version 3.9 or higher recommended)
 - Node.js and npm
+- Libpostal library 
 
 ---
 
