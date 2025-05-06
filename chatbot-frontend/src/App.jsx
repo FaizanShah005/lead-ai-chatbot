@@ -1,4 +1,4 @@
-import ChatWidget from './components/ChatWidget'
+import ChatWidget from './components/ChatWidget/ChatWidget'
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Home from "./pages/Home";

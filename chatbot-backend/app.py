@@ -2,19 +2,18 @@ from flask import Flask, request, jsonify, render_template, redirect, url_for, f
 from flask_cors import CORS
 import os
 from dotenv import load_dotenv
-from chat import get_chatbot_response
+from services.chat import get_chatbot_response
 import tempfile
 import openai
 from werkzeug.utils import secure_filename
 from flask_sqlalchemy import SQLAlchemy
 from config import Config
-from models import Lead, db, admin, login
+from models import Lead, db, login, User
+from admin import admin
 from flask_migrate import Migrate
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from models import User
-from lead_extractor import LeadExtractor
-from chat import get_chatbot_response  # Import the necessary functions
+from services.lead_extractor import lead_extractor
 
 # Load environment variables
 load_dotenv() #load environment variables from .env file
@@ -32,8 +31,8 @@ db.init_app(app) #initialize the database with the Flask app
 
 migrate = Migrate(app, db) #instance of Migrate
 
-# Initialize LeadExtractor
-lead_extractor = LeadExtractor()
+# Initialize LeadExtractor - using the singleton instance directly
+# lead_extractor is already initialized in the services/lead_extractor.py file
 
 with app.app_context():
     db.create_all()
@@ -50,7 +49,7 @@ CORS(app, resources={
 })
 
 @app.route('/admin')
-# @login_required
+@login_required
 def admin_panel():
     if not current_user.is_authenticated or current_user.role not in ['admin', 'client']:
         flash('You do not have permission to access this page')
