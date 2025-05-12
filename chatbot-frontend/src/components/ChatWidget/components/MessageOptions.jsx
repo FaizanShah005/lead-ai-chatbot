@@ -1,12 +1,80 @@
-import React from 'react';
+import React, { memo } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
 
-const MessageOptions = ({ options, onOptionClick }) => {
+const MessageOptions = memo(({ options, onOptionClick }) => {
+  const prefersReducedMotion = useReducedMotion();
+  
+  // Simplified container animation to reduce nested animations
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: prefersReducedMotion ? 0.03 : 0.05,
+        delayChildren: prefersReducedMotion ? 0.05 : 0.1,
+        ease: "easeOut",
+        when: "beforeChildren"
+      }
+    }
+  };
+  
+  // Use GPU-accelerated properties (transform, opacity) instead of height/position changes
+  const item = {
+    hidden: prefersReducedMotion 
+      ? { opacity: 0 }
+      : { opacity: 0, scale: 0.9, y: 10 },
+    show: prefersReducedMotion
+      ? { 
+          opacity: 1,
+          transition: { duration: 0.2 }
+        }
+      : { 
+          opacity: 1, 
+          scale: 1,
+          y: 0,
+          transition: {
+            type: "spring",
+            stiffness: 200, // Lower stiffness for smoother motion
+            damping: 20,
+            mass: 0.6, // Lower mass for faster response
+            velocity: 1
+          }
+        }
+  };
+
+  // Simplified hover animation
+  const buttonHoverAnimation = !prefersReducedMotion 
+    ? { 
+        scale: 1.03, 
+        y: -1,
+        transition: { duration: 0.2, ease: "easeOut" }
+      } 
+    : {};
+    
+  const buttonTapAnimation = !prefersReducedMotion 
+    ? { scale: 0.97 }
+    : {};
+
+  // Use a more efficient callback for option clicks
+  const handleClick = (option) => () => {
+    onOptionClick(option);
+  };
+
   return (
-    <div className="mt-2 flex flex-wrap gap-2 justify-start">
+    <motion.div 
+      className="mt-2 flex flex-wrap gap-2 justify-start"
+      variants={container}
+      initial="hidden"
+      animate="show"
+      layout
+    >
       {options.map((option, index) => (
-        <button
+        <motion.button
           key={index}
-          onClick={() => onOptionClick(option)}
+          variants={item}
+          whileHover={buttonHoverAnimation}
+          whileTap={buttonTapAnimation}
+          onClick={handleClick(option)}
           className="
             px-3 py-1.5 
             text-sm font-medium
@@ -15,21 +83,26 @@ const MessageOptions = ({ options, onOptionClick }) => {
             text-white
             rounded-full
             border border-purple-400/30
-            shadow-lg hover:shadow-xl
-            transition-all duration-300
-            hover:-translate-y-0.5
-            hover:scale-105
-            active:scale-95
+            shadow-lg
+            transition-colors duration-200
             whitespace-nowrap
             backdrop-blur-sm
-            hover:backdrop-blur-md
+            will-change-transform
           "
+          aria-label={`Select option: ${option}`}
+          style={{
+            willChange: 'transform',
+            transform: 'translateZ(0)',
+            backfaceVisibility: 'hidden'
+          }}
         >
           {option}
-        </button>
+        </motion.button>
       ))}
-    </div>
+    </motion.div>
   );
-};
+});
+
+MessageOptions.displayName = 'MessageOptions';
 
 export default MessageOptions; 
