@@ -13,7 +13,7 @@ from admin import admin
 from flask_migrate import Migrate
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from services.lead_extractor import lead_extractor
+# from services.lead_extractor import lead_extractor
 
 # Load environment variables
 load_dotenv() #load environment variables from .env file
@@ -23,11 +23,8 @@ app = Flask(__name__) #instance of Flask
 login.init_app(app) #initialize LoginManager with the Flask app
 login.login_view = 'login' #set the login view to the login route
 app.config.from_object(Config) #load configuration from the config.py file
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-here') #set the secret key for the app
-
 
 db.init_app(app) #initialize the database with the Flask app
-
 
 migrate = Migrate(app, db) #instance of Migrate
 
@@ -47,6 +44,14 @@ CORS(app, resources={
         "supports_credentials": True
     }
 })
+
+@app.route('/')
+def index():
+    return redirect(url_for('login'))
+
+@app.route('/contact')
+def contact():
+    return render_template('index.html')
 
 @app.route('/admin')
 @login_required
@@ -165,15 +170,15 @@ def transcribe_audio():
             except Exception as e:
                 print(f"Error deleting temporary file: {str(e)}")
 
-@app.route('/generate-leads', methods=['POST'])
-def generate_leads():
-    data = request.json
-    url = data.get('url')
-    if not url:
-        return jsonify({"success": False, "error": "URL missing"}), 400
+# @app.route('/generate-leads', methods=['POST'])
+# def generate_leads():
+#     data = request.json
+#     url = data.get('url')
+#     if not url:
+#         return jsonify({"success": False, "error": "URL missing"}), 400
 
-    result = lead_extractor.extract_from_url(url)
-    return jsonify(result)
+#     result = lead_extractor.extract_from_url(url)
+#     return jsonify(result)
 
 
 
