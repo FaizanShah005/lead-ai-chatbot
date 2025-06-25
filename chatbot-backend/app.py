@@ -104,9 +104,11 @@ def handle_form():
     name = data.get('name')
     email = data.get('email')
     phone = data.get('phone')
+    address = data.get('address')
+    message = data.get('message')
 
     # Save to DB logic here...
-    leads = Lead(name=name, email=email, phone=phone  )
+    leads = Lead(name=name, email=email, phone=phone, address=address, message=message)
     db.session.add(leads)
     db.session.commit()
     print(leads)
@@ -189,7 +191,10 @@ def get_top_leads():
         results = [{
             "name": lead.name,
             "email": lead.email,
-            "location": lead.location
+            "phone": lead.phone,
+            "address": lead.address,
+            "message": lead.message,
+            "created_at": lead.created_at.isoformat() if lead.created_at else None
         } for lead in leads]
 
         return jsonify({

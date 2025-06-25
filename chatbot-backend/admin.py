@@ -23,8 +23,8 @@ class MyModelView(ModelView):
 
 # Create admin views with proper access control
 class LeadModelView(MyModelView):
-    column_list = ['name', 'email', 'phone', 'created_at']
-    column_searchable_list = ['name', 'email', 'phone']
+    column_list = ['name', 'email', 'phone', 'address', 'message', 'created_at']
+    column_searchable_list = ['name', 'email', 'phone', 'address', 'message']
     column_filters = ['created_at']
     can_create = True
     can_edit = True
