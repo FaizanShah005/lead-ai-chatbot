@@ -15,12 +15,15 @@ def create_admin():
         if not admin_user:
             admin_user = User(
                 username='adminuser',
+                email='admin@example.com',  # Default email - should be changed after creation
                 password=generate_password_hash('admin1234', method='pbkdf2:sha256'),
                 role='admin'
             )
             db.session.add(admin_user)
             db.session.commit()
             print("Admin user created successfully.")
+            print("Default credentials: username='adminuser', password='admin1234', email='admin@example.com'")
+            print("IMPORTANT: Please change the password and email after first login!")
         else:
             print("Admin user already exists.")
 

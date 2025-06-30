@@ -79,6 +79,24 @@
             </div>
             <button type="submit">Login</button>
         </form>
+        
+        <!-- Links -->
+        <div style="text-align: center; margin-top: 1rem;">
+            <a href="{{ url_for('forgot_password') }}" style="color: #007bff; text-decoration: none; font-size: 0.9rem;">
+                Forgot Password?
+            </a>
+        </div>
+        
+        {% if no_admins_exist %}
+        <div style="text-align: center; margin-top: 1rem; padding: 1rem; background-color: #e7f3ff; border-radius: 4px; border: 1px solid #b3d9ff;">
+            <p style="margin: 0 0 0.5rem 0; font-size: 0.9rem; color: #0066cc;">
+                No admin accounts exist yet. Create the first admin account:
+            </p>
+            <a href="{{ url_for('register_first_admin') }}" style="display: inline-block; padding: 0.5rem 1rem; background-color: #28a745; color: white; text-decoration: none; border-radius: 4px; font-size: 0.9rem;">
+                Create First Admin
+            </a>
+        </div>
+        {% endif %}
     </div>
 </body>
 </html> 
