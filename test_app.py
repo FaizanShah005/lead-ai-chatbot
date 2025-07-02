@@ -4,11 +4,6 @@ app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return 'Hello World! Test Flask app is working!'
+    return 'WORKING!'
 
-@app.route('/health')
-def health():
-    return 'OK'
-
-if __name__ == '__main__':
-    app.run(debug=True, port=5000) 
+# Remove health route and if __name__ block to make it as simple as possible 
