@@ -38,11 +38,11 @@ with app.app_context():
     db.create_all()
     admin.init_app(app )
 
-# Configure CORS with environment variables
-cors_origins = os.getenv('CORS_ORIGINS').split(',')
-cors_methods = os.getenv('CORS_METHODS').split(',')
-cors_headers = os.getenv('CORS_ALLOW_HEADERS').split(',')
-cors_credentials = os.getenv('CORS_SUPPORTS_CREDENTIALS').lower() == 'true'
+# Configure CORS with environment variables (with fallbacks)
+cors_origins = os.getenv('CORS_ORIGINS', '*').split(',')
+cors_methods = os.getenv('CORS_METHODS', 'GET,POST,PUT,DELETE,OPTIONS').split(',')
+cors_headers = os.getenv('CORS_ALLOW_HEADERS', 'Content-Type,Authorization').split(',')
+cors_credentials = os.getenv('CORS_SUPPORTS_CREDENTIALS', 'true').lower() == 'true'
 
 CORS(app, resources={
     r"/*": {
