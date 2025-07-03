@@ -38,13 +38,18 @@ with app.app_context():
     db.create_all()
     admin.init_app(app )
 
-# Configure CORS with specific settings
+# Configure CORS with environment variables
+cors_origins = os.getenv('CORS_ORIGINS').split(',')
+cors_methods = os.getenv('CORS_METHODS').split(',')
+cors_headers = os.getenv('CORS_ALLOW_HEADERS').split(',')
+cors_credentials = os.getenv('CORS_SUPPORTS_CREDENTIALS').lower() == 'true'
+
 CORS(app, resources={
     r"/*": {
-        "origins": ["http://localhost:5173", "https://*.ngrok-free.app", "https://*.ngrok.io", "*"],
-        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        "allow_headers": ["Content-Type", "Authorization", "ngrok-skip-browser-warning"],
-        "supports_credentials": True
+        "origins": cors_origins,
+        "methods": cors_methods,
+        "allow_headers": cors_headers,
+        "supports_credentials": cors_credentials
     }
 })
 
