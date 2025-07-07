@@ -44,16 +44,17 @@ cors_methods = os.getenv('CORS_METHODS', 'GET,POST,PUT,DELETE,OPTIONS').split(',
 cors_headers = os.getenv('CORS_ALLOW_HEADERS', 'Content-Type,Authorization').split(',')
 cors_credentials = os.getenv('CORS_SUPPORTS_CREDENTIALS', 'true').lower() == 'true'
 
-# CORS(app, resources={
-#     r"/*": {
-#         "origins": cors_origins,
-#         "methods": cors_methods,
-#         "allow_headers": cors_headers,
-#         "supports_credentials": cors_credentials
-#     }
-# })
+CORS(app, resources={
+    r"/*": {
+        "origins": cors_origins,
+        "methods": cors_methods,
+        "allow_headers": cors_headers,
+        "supports_credentials": cors_credentials
+    }
+})
 
-CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}}, supports_credentials=True)
+# Comment out the localhost-specific CORS config
+# CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}}, supports_credentials=True)
 
 @app.route('/')
 def index():
