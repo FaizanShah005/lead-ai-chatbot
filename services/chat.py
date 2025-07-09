@@ -81,7 +81,7 @@ def call_openrouter_gemini(messages):
         return "Sorry, I encountered an error while contacting OpenRouter."
 
 class ChatService:
-    def _init_(self):
+    def __init__(self):
         self.embeddings_data = []
         self.embeddings_file_path = os.path.join(os.path.dirname(__file__), '..', EMBEDDINGS_FILE)
         self.REDIRECT_MAP = {"pricing": "/pricing", "contact": "/contact", "services": "/services"}
