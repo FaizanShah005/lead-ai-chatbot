@@ -15,13 +15,16 @@ from flask_login import LoginManager, login_user, logout_user, login_required, c
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_mail import Mail, Message
 from datetime import datetime, timedelta
-# from services.lead_extractor import lead_extractor
+from services.chat import get_chatbot_response, chat_service
 
-# Load environment variables
-load_dotenv() #load environment variables from .env file
+
+load_dotenv() 
 
 # Initialize Flask app
 app = Flask(__name__) #instance of Flask
+app.secret_key = os.getenv('SECRET_KEY', 'your_secret_key_here')
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'
+app.config['SESSION_COOKIE_SECURE'] = False
 login.init_app(app) #initialize LoginManager with the Flask app
 login.login_view = 'login' #set the login view to the login route
 app.config.from_object(Config) #load configuration from the config.py file
@@ -31,8 +34,7 @@ mail = Mail(app) #initialize Flask-Mail
 
 migrate = Migrate(app, db) #instance of Migrate
 
-# Initialize LeadExtractor - using the singleton instance directly
-# lead_extractor is already initialized in the services/lead_extractor.py file
+
 
 with app.app_context():
     db.create_all()
@@ -53,8 +55,7 @@ CORS(app, resources={
     }
 })
 
-# Comment out the localhost-specific CORS config
-# CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}}, supports_credentials=True)
+
 
 @app.route('/')
 def index():
@@ -389,23 +390,43 @@ def handle_form():
 
 
 # Configure OpenAI
-openai.api_key = os.getenv('OPENAI_API_KEY')
-
-
+# openai.api_key = os.getenv('OPENAI_API_KEY')
 
 @app.route('/chat', methods=['POST'])
 def chat():
+    print("Received /chat request")  # Log when endpoint is hit
     try:
         data = request.get_json()
         user_message = data.get('message')
+        chat_history = data.get('chat_history', [])
+
+        print(f"User message: {user_message}")  # Log the incoming message
+        print(f"Chat history: {chat_history}")
 
         if not user_message:
             return jsonify({'type': 'error', 'message': 'No message provided'}), 400
 
-        response = get_chatbot_response(user_message)
+        print("Calling get_chatbot_response...")  # Log before calling backend logic
+        response = get_chatbot_response(user_message, chat_history)
+        print(f"Chatbot response: {response}")  # Log the response from backend logic
         return jsonify(response)
     except Exception as e:
+        print(f"Error in /chat endpoint: {e}")
         return jsonify({'type': 'error', 'message': str(e)}), 500
+    
+@app.route('/start-embedding', methods=['POST'])
+def start_embedding():
+    data = request.get_json()
+    url = data.get('url')
+    if not url:
+        return jsonify({'error': 'URL is required'}), 400
+    try:
+        chat_service._crawl_embed_and_save_playwright_from_url(url)
+        return jsonify({'message': 'Embedding process started successfully!'})
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/transcribe', methods=['POST'])
 def transcribe_audio():
@@ -445,17 +466,6 @@ def transcribe_audio():
             except Exception as e:
                 print(f"Error deleting temporary file: {str(e)}")
 
-# @app.route('/generate-leads', methods=['POST'])
-# def generate_leads():
-#     data = request.json
-#     url = data.get('url')
-#     if not url:
-#         return jsonify({"success": False, "error": "URL missing"}), 400
-
-#     result = lead_extractor.extract_from_url(url)
-#     return jsonify(result)
-
-
 
 @app.route('/get-top-leads', methods=['GET'])
 def get_top_leads():
@@ -480,6 +490,6 @@ def get_top_leads():
             "error": str(e)
         })
 
-if __name__ == '__main__':
+if __name__ == '_main_':
 
     app.run(debug=False, port=5000)
