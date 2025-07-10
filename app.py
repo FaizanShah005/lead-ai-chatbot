@@ -1,6 +1,4 @@
-
 from flask import Flask, request, jsonify, render_template, redirect, url_for, flash, session
-
 from flask_cors import CORS
 import os
 from dotenv import load_dotenv
@@ -23,14 +21,12 @@ from datetime import datetime, timedelta
 load_dotenv() #load environment variables from .env file
 
 # Initialize Flask app
-app = Flask(__name__) #instance of Flask
-
+app = Flask(_name_) #instance of Flask
 app.secret_key = os.getenv('SECRET_KEY', 'your_secret_key_here')
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'
 app.config['SESSION_COOKIE_SECURE'] = False
 
 login = LoginManager() 
-
 login.init_app(app) #initialize LoginManager with the Flask app
 login.login_view = 'login' #set the login view to the login route
 app.config.from_object(Config) #load configuration from the config.py file
@@ -60,9 +56,7 @@ CORS(app, resources={
         "allow_headers": cors_headers,
         "supports_credentials": cors_credentials
     }
-
 }, supports_credentials=True)
-
 
 # Comment out the localhost-specific CORS config
 # CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}}, supports_credentials=True)
@@ -401,23 +395,19 @@ def handle_form():
 # Configure OpenAI
 openai.api_key = os.getenv('OPENAI_API_KEY')
 
-
-
 @app.route('/chat', methods=['POST'])
 def chat():
+    print("Received /chat request")  # Log when endpoint is hit
     try:
         data = request.get_json()
         user_message = data.get('message')
-
         chat_history = data.get('chat_history', [])
         
         print(f"User message: {user_message}")  # Log the incoming message
         print(f"Chat history: {chat_history}")
 
-
         if not user_message:
             return jsonify({'type': 'error', 'message': 'No message provided'}), 400
-
 
         print("Calling get_chatbot_response...")  # Log before calling backend logic
         
@@ -425,12 +415,11 @@ def chat():
         response = get_chatbot_response(user_message, chat_history)
         
         print(f"Chatbot response: {response}")  # Log the response from backend logic
-
         return jsonify(response)
         
     except Exception as e:
+        print(f"Error in /chat endpoint: {e}")
         return jsonify({'type': 'error', 'message': str(e)}), 500
-
 
 @app.route('/start-embedding', methods=['POST'])
 def start_embedding():
@@ -454,7 +443,6 @@ def start_embedding():
         print(f"Error in /start-embedding endpoint: {e}")
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
-
 
 @app.route('/transcribe', methods=['POST'])
 def transcribe_audio():
@@ -503,8 +491,6 @@ def transcribe_audio():
 #     result = lead_extractor.extract_from_url(url)
 #     return jsonify(result)
 
-
-
 @app.route('/get-top-leads', methods=['GET'])
 def get_top_leads():
     try:
@@ -528,9 +514,5 @@ def get_top_leads():
             "error": str(e)
         })
 
-if __name__ == '__main__':
-
+if _name_ == '_main_':
     app.run(debug=False, port=5000)
-
-
-
