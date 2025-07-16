@@ -17,8 +17,7 @@ from flask_mail import Mail, Message
 from datetime import datetime, timedelta
 # from services.lead_extractor import lead_extractor
 
-# Load environment variables
-load_dotenv() #load environment variables from .env file
+load_dotenv() 
 
 # Initialize Flask app
 app = Flask(__name__) #instance of Flask
