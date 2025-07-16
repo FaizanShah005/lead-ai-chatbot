@@ -24,7 +24,7 @@ MAX_TOKENS_PER_CHUNK = 500
 
 # === OpenRouter Gemini API ===
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-CHAT_MODEL = "mistralai/mistral-small-3.2-24b-instruct:free"
+CHAT_MODEL = "mistralai/mistral-small-3.1-24b-instruct:free"
 
 if OPENROUTER_API_KEY:
     logging.info(f"OpenRouter API Key loaded: {OPENROUTER_API_KEY[:5]}...")
@@ -84,7 +84,7 @@ class ChatService:
     def __init__(self):
         self.embeddings_data = []
         self.embeddings_file_path = os.path.join(os.path.dirname(__file__), '..', EMBEDDINGS_FILE)
-        self.REDIRECT_MAP = {"pricing": "/pricing", "contact": "/contact", "services": "/services"}
+        self.REDIRECT_MAP = {"pricing": "/pricing", "contact": "/contact", "services": "/services", "about": "/about", "home": "/"}
         self._initialize_embeddings()
 
     def _initialize_embeddings(self):
