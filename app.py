@@ -1,15 +1,14 @@
-
-from flask import Flask, request, jsonify, render_template, redirect, url_for, flash
+from flask import Flask, request, jsonify, render_template, redirect, url_for, flash, session
 from flask_cors import CORS
 import os
 from dotenv import load_dotenv
-from services.chat import get_chatbot_response
+from services.chat import get_chatbot_response, chat_service
 import tempfile
 import openai
 from werkzeug.utils import secure_filename
 from flask_sqlalchemy import SQLAlchemy
 from config import Config
-from models import Lead, db, login, User
+from models import Lead, db, login, Users
 from admin import admin
 from flask_migrate import Migrate
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
@@ -22,13 +21,18 @@ from datetime import datetime, timedelta
 load_dotenv() #load environment variables from .env file
 
 # Initialize Flask app
-app = Flask(__name__) #instance of Flask
+app = Flask(_name_) #instance of Flask
+app.secret_key = os.getenv('SECRET_KEY', 'your_secret_key_here')
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'
+app.config['SESSION_COOKIE_SECURE'] = False
+
+login = LoginManager() 
 login.init_app(app) #initialize LoginManager with the Flask app
 login.login_view = 'login' #set the login view to the login route
 app.config.from_object(Config) #load configuration from the config.py file
 
-db.init_app(app) #initialize the database with the Flask app
-mail = Mail(app) #initialize Flask-Mail
+db.init_app(app)
+mail = Mail(app) 
 
 migrate = Migrate(app, db) #instance of Migrate
 
@@ -37,10 +41,10 @@ migrate = Migrate(app, db) #instance of Migrate
 
 with app.app_context():
     db.create_all()
-    admin.init_app(app )
+    admin.init_app(app)
 
 # Configure CORS with environment variables (with fallbacks)
-cors_origins = os.getenv('CORS_ORIGINS', '*').split(',')
+cors_origins = os.getenv('CORS_ORIGINS', 'http://localhost:5173,http://localhost:5174').split(',')
 cors_methods = os.getenv('CORS_METHODS', 'GET,POST,PUT,DELETE,OPTIONS').split(',')
 cors_headers = os.getenv('CORS_ALLOW_HEADERS', 'Content-Type,Authorization').split(',')
 cors_credentials = os.getenv('CORS_SUPPORTS_CREDENTIALS', 'true').lower() == 'true'
@@ -52,7 +56,7 @@ CORS(app, resources={
         "allow_headers": cors_headers,
         "supports_credentials": cors_credentials
     }
-})
+}, supports_credentials=True)
 
 # Comment out the localhost-specific CORS config
 # CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}}, supports_credentials=True)
@@ -388,29 +392,60 @@ def handle_form():
             'message': f'Error saving data: {str(e)}'
         }), 500
 
-
 # Configure OpenAI
 openai.api_key = os.getenv('OPENAI_API_KEY')
 
-
-
 @app.route('/chat', methods=['POST'])
 def chat():
+    print("Received /chat request")  # Log when endpoint is hit
     try:
         data = request.get_json()
         user_message = data.get('message')
+        chat_history = data.get('chat_history', [])
+        
+        print(f"User message: {user_message}")  # Log the incoming message
+        print(f"Chat history: {chat_history}")
 
         if not user_message:
             return jsonify({'type': 'error', 'message': 'No message provided'}), 400
 
-        response = get_chatbot_response(user_message)
+        print("Calling get_chatbot_response...")  # Log before calling backend logic
+        
+        # Use the enhanced chat function with history support
+        response = get_chatbot_response(user_message, chat_history)
+        
+        print(f"Chatbot response: {response}")  # Log the response from backend logic
         return jsonify(response)
+        
     except Exception as e:
+        print(f"Error in /chat endpoint: {e}")
         return jsonify({'type': 'error', 'message': str(e)}), 500
+
+@app.route('/start-embedding', methods=['POST'])
+def start_embedding():
+    print("Received /start-embedding request")  # Log when endpoint is hit
+    try:
+        data = request.get_json()
+        url = data.get('url')
+        
+        if not url:
+            return jsonify({'error': 'URL is required'}), 400
+        
+        print(f"Starting embedding process for URL: {url}")
+        
+        # Call the embedding function from chat service
+        chat_service._crawl_embed_and_save_playwright_from_url(url)
+        
+        return jsonify({'message': 'Embedding process started successfully!'})
+        
+    except Exception as e:
+        import traceback
+        print(f"Error in /start-embedding endpoint: {e}")
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/transcribe', methods=['POST'])
 def transcribe_audio():
-
     if 'audio' not in request.files:
         return jsonify({'error': 'No audio file provided'}), 400
     
@@ -427,7 +462,7 @@ def transcribe_audio():
         
         # Transcribe the audio using Whisper
         with open(temp_audio_path, 'rb') as audio:
-            response =  openai.audio.transcriptions.create(
+            response = openai.audio.transcriptions.create(
                 model="whisper-1",
                 file=audio,
                 language="en"
@@ -456,8 +491,6 @@ def transcribe_audio():
 #     result = lead_extractor.extract_from_url(url)
 #     return jsonify(result)
 
-
-
 @app.route('/get-top-leads', methods=['GET'])
 def get_top_leads():
     try:
@@ -481,6 +514,5 @@ def get_top_leads():
             "error": str(e)
         })
 
-if __name__ == '__main__':
-
+if _name_ == '_main_':
     app.run(debug=False, port=5000)
