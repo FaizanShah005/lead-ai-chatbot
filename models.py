@@ -1,12 +1,11 @@
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta
-from flask_login import UserMixin, LoginManager
+from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 import secrets
 
 # Initialize extensions
 db = SQLAlchemy()
-login = LoginManager()
 
 class Lead(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -58,6 +57,4 @@ class User(UserMixin, db.Model):
         self.reset_token_expiry = None
         db.session.commit()
 
-@login.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))
+

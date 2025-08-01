@@ -68,7 +68,7 @@
                 </div>
             {% endif %}
         {% endwith %}
-        <form method="POST">
+        <form method="POST" id="loginForm">
             <div class="form-group">
                 <label for="username">Username:</label>
                 <input type="text" id="username" name="username" required>
@@ -77,8 +77,16 @@
                 <label for="password">Password:</label>
                 <input type="password" id="password" name="password" required>
             </div>
-            <button type="submit">Login</button>
+            <button type="submit" id="loginButton">Login</button>
         </form>
+        
+        <script>
+            document.getElementById('loginForm').addEventListener('submit', function(e) {
+                console.log('Form submitted');
+                document.getElementById('loginButton').textContent = 'Logging in...';
+                document.getElementById('loginButton').disabled = true;
+            });
+        </script>
         
         <!-- Links -->
         <div style="text-align: center; margin-top: 1rem;">
