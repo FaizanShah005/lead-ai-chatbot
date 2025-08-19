@@ -8,7 +8,7 @@ import openai
 from werkzeug.utils import secure_filename
 from flask_sqlalchemy import SQLAlchemy
 from config import Config
-from models import Lead, db, login, Users
+from models import Lead, db, User
 from admin import admin
 from flask_migrate import Migrate
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
@@ -17,17 +17,22 @@ from flask_mail import Mail, Message
 from datetime import datetime, timedelta
 # from services.lead_extractor import lead_extractor
 
-load_dotenv() 
+# Load environment variables
+load_dotenv() #load environment variables from .env file
 
 # Initialize Flask app
 app = Flask(__name__) #instance of Flask
 app.secret_key = os.getenv('SECRET_KEY', 'your_secret_key_here')
-app.config['SESSION_COOKIE_SAMESITE'] = 'None'
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Changed from 'None' to 'Lax'
 app.config['SESSION_COOKIE_SECURE'] = False
 
 login = LoginManager() 
 login.init_app(app) #initialize LoginManager with the Flask app
 login.login_view = 'login' #set the login view to the login route
+
+@login.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
 app.config.from_object(Config) #load configuration from the config.py file
 
 db.init_app(app)
@@ -69,22 +74,30 @@ def contact():
     return render_template('index.html')
 
 @app.route('/admin')
-@login_required
 def admin_panel():
+    print(f"Admin panel accessed. User authenticated: {current_user.is_authenticated}")
+    if current_user.is_authenticated:
+        print(f"Current user: {current_user.username}, Role: {current_user.role}")
+    
     if not current_user.is_authenticated or current_user.role not in ['admin', 'client']:
         flash('You do not have permission to access this page')
         return redirect(url_for('login'))
-    return redirect('/admin/')
+    # Render the admin template directly
+    return render_template('admin/index.html', current_user=current_user)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    print(f"Login route accessed. Method: {request.method}")  # Debug log
+    
     if current_user.is_authenticated:
+        print("User already authenticated, redirecting to admin panel")  # Debug log
         return redirect(url_for('admin_panel'))
     
     # Check if any admins exist - if not, show registration option
     no_admins_exist = User.query.filter_by(role='admin').first() is None
         
     if request.method == 'POST':
+        print("POST request received for login")  # Debug log
         username = request.form.get('username')
         password = request.form.get('password')
 
@@ -105,6 +118,8 @@ def login():
             
         flash('Invalid username or password')
         return redirect(url_for('login'))
+    else:
+        print("GET request for login page")  # Debug log
     
     return render_template('login.html', no_admins_exist=no_admins_exist)
 

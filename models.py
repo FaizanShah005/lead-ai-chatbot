@@ -1,12 +1,11 @@
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta
-from flask_login import UserMixin, LoginManager
+from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 import secrets
 
 # Initialize extensions
 db = SQLAlchemy()
-login = LoginManager()
 
 class Lead(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -19,10 +18,10 @@ class Lead(db.Model):
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)  
+    email = db.Column(db.String(120), unique=True, nullable=False)  # Make email required
     password = db.Column(db.String(200), nullable=False)
-    role = db.Column(db.String(50), nullable=False)  
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)  
+    role = db.Column(db.String(50), nullable=False)  # 'admin' or 'client'
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)  # Track when user was created
     
     # Password reset fields
     reset_token = db.Column(db.String(100), nullable=True)
@@ -58,6 +57,3 @@ class User(UserMixin, db.Model):
         self.reset_token_expiry = None
         db.session.commit()
 
-@login.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))
